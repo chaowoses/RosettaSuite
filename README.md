@@ -12,7 +12,7 @@ Rosetta Suite uses **two scripts**:
    - Converts it into a dictionary
 
 
-2. **[Practice Autofill](./AutoAnswer.js)**
+2. **[Auto Answer](./AutoAnswer.js)**
    - Runs on the Conjuguemos graded practice page
    - Uses the dictionary to automatically fill answers
 
@@ -30,3 +30,11 @@ Instead of opening the console and pasting scripts, you can create **bookmarklet
 Create a new bookmark and paste the following into the **URL field**.  
 
 ### Vocabulary Fetcher
+```javascript
+javascript: fetch("https://raw.githubusercontent.com/Chaos142/RosettaSuite/refs/heads/main/VocabFetch.js").then(r => r.text()).then(r => eval(r))
+```
+
+### Auto Answer
+```javascript
+javascript: fetch("https://raw.githubusercontent.com/Chaos142/RosettaSuite/refs/heads/main/AutoAnswer.js").then(r => r.text()).then(r => eval(r))
+```
