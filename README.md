@@ -1,6 +1,6 @@
 # Rosetta Suite — Conjuguemos Autofiller  
 
-**Rosetta Suite** is a small browser script toolkit that automatically fills answers for **Conjuguemos graded practice** using the vocabulary from the lesson page. (i would rather write code than do Spanish homework)  
+**Rosetta Suite** is a small browser script toolkit that automatically fills answers for **Conjuguemos graded practice** using the vocabulary from the lesson page. (i would rather write code for 15 minutes than do Spanish homework for 10)  
 
 This works by extracting the vocabulary from the Conjuguemos lesson page and using it to autofill answers during graded practice.  
 
