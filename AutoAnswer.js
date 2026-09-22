@@ -58,6 +58,16 @@
         return null;
     };
 
+    // Identifies the question currently on screen, so we can tell whether
+    // a miss left us on the same prompt (retry required) or moved on.
+    const getQuestionSignature = () => {
+        const parts = ['question-input', 'pronoun-input', 'verb-input']
+            .map(id => document.getElementById(id))
+            .filter(Boolean)
+            .map(el => clean(el.innerText));
+        return parts.length ? parts.join('|') : null;
+    };
+
     const randomWrongAnswer = (correct) => {
         const pool = allAnswers.filter(a => a !== correct);
         if (!pool.length) return correct + 'x';
@@ -137,6 +147,11 @@
         let correctSoFar = 0;
         let missCount = 0;
         let stopped = false;
+        // Set after a wrong answer: Conjuguemos keeps the same question up
+        // until it's answered correctly, so the next submit must be the
+        // right answer and doesn't count as a new question.
+        let retrySignature = null;
+        let retryAttempts = 0;
 
         const stopListener = (e) => {
             if (e.key === 'Escape') {
@@ -160,6 +175,13 @@
                     callback();
                     return;
                 }
+                // After a miss the site leaves the wrong answer in the box
+                // instead of clearing it; wait the normal delay, then let
+                // the retry overwrite it.
+                if (retrySignature && Date.now() - start >= delayMs) {
+                    callback();
+                    return;
+                }
                 if (Date.now() - start > 5000) {
                     finish('timed out waiting for the next question');
                     return;
@@ -169,12 +191,48 @@
             setTimeout(check, 40);
         };
 
+        const pressEnter = (inputField) => {
+            // keyCode/which/charCode aren't set by the KeyboardEvent
+            // constructor from `key` alone, and some Enter-to-submit
+            // handlers still check the legacy numeric codes (and fire
+            // on `keypress` instead of `keydown`), so send all three.
+            const enterOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, charCode: 13, bubbles: true, cancelable: true };
+            inputField.dispatchEvent(new KeyboardEvent('keydown', enterOpts));
+            inputField.dispatchEvent(new KeyboardEvent('keypress', enterOpts));
+            inputField.dispatchEvent(new KeyboardEvent('keyup', enterOpts));
+        };
+
+        const fillInput = (inputField, value) => {
+            inputField.value = value;
+            inputField.dispatchEvent(new Event('input', { bubbles: true }));
+            inputField.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
         const submitOne = () => {
             if (stopped) return finish('stopped early');
-            if (answered >= totalQuestions) return finish('done');
 
             const inputField = document.getElementById('answer-input');
             const correctAnswer = getCorrectAnswer();
+
+            if (retrySignature) {
+                if (inputField && correctAnswer && getQuestionSignature() === retrySignature) {
+                    if (++retryAttempts > 3) {
+                        finish('could not get past a missed question');
+                        return;
+                    }
+                    fillInput(inputField, correctAnswer);
+                    setTimeout(() => {
+                        pressEnter(inputField);
+                        waitForNextQuestion(submitOne);
+                    }, delayMs);
+                    return;
+                }
+                // Question moved on (or no retry needed) — resume the plan.
+                retrySignature = null;
+                retryAttempts = 0;
+            }
+
+            if (answered >= totalQuestions) return finish('done');
 
             if (!inputField || !correctAnswer) {
                 missCount++;
@@ -190,23 +248,15 @@
             const goCorrect = plan[answered];
             const answerToUse = goCorrect ? correctAnswer : randomWrongAnswer(correctAnswer);
 
-            inputField.value = answerToUse;
-            inputField.dispatchEvent(new Event('input', { bubbles: true }));
-            inputField.dispatchEvent(new Event('change', { bubbles: true }));
+            fillInput(inputField, answerToUse);
 
             answered++;
             if (goCorrect) correctSoFar++;
+            else retrySignature = getQuestionSignature();
             badge.textContent = `Rosetta Suite: ${answered}/${totalQuestions} (${correctSoFar} correct) — Esc to stop`;
 
             setTimeout(() => {
-                // keyCode/which/charCode aren't set by the KeyboardEvent
-                // constructor from `key` alone, and some Enter-to-submit
-                // handlers still check the legacy numeric codes (and fire
-                // on `keypress` instead of `keydown`), so send all three.
-                const enterOpts = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, charCode: 13, bubbles: true, cancelable: true };
-                inputField.dispatchEvent(new KeyboardEvent('keydown', enterOpts));
-                inputField.dispatchEvent(new KeyboardEvent('keypress', enterOpts));
-                inputField.dispatchEvent(new KeyboardEvent('keyup', enterOpts));
+                pressEnter(inputField);
                 waitForNextQuestion(submitOne);
             }, delayMs);
         };
