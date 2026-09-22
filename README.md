@@ -17,7 +17,7 @@ It supports two kinds of Conjuguemos lessons:
 
 ## How It Works
 
-Rosetta Suite uses **two scripts**:
+Rosetta Suite uses **three scripts**:
 
   
 
@@ -35,9 +35,23 @@ Rosetta Suite uses **two scripts**:
 
 - Runs on the Conjuguemos graded practice page
 
+- Asks you to paste the JSON from step 1, then pops up a small UI asking for a **target percent correct**, a **total number of questions**, and a **delay between questions**
+
+- Fully automatic — answers that many questions back-to-back with a deterministic, shuffled mix of right/wrong answers landing on your target percentage, then stops and reports the final tally
+
+- Press **Esc** at any time to stop early
+
+  
+
+3.  **[Auto Answer Manual](./AutoAnswerManual.js)**
+
+- Runs on the Conjuguemos graded practice page, same as Auto Answer
+
 - Asks you to paste the JSON from step 1
 
 - Watches the answer box and, when you press Enter on an empty answer, fills in the correct answer — matching either a vocab question (`#question-input`) or a conjugation prompt (`#pronoun-input` + `#verb-input`)
+
+- Manual/interactive — you press Enter yourself for each question
 
 
   
@@ -50,13 +64,9 @@ Rosetta Suite uses **two scripts**:
 
 3. Open the matching **graded practice** activity.
 
-4. Run the **Auto Answer** script (via console or bookmarklet).
-
-5. Paste the JSON copied in step 2 into the prompt.
-
-6. Press **Enter** on an empty answer box to autofill the correct answer.
-
-7. Press **Enter** again (box now has text) to submit it normally.
+4. Run either **Auto Answer** or **Auto Answer Manual** (via console or bookmarklet), depending on how hands-on you want to be:
+   - **Auto Answer**: paste the JSON, set a target percent correct, a question count, and a delay in the popup, and it runs the whole batch itself, then stops.
+   - **Auto Answer Manual**: paste the JSON, then press **Enter** on an empty answer box to autofill, and **Enter** again to submit — you're still doing the clicking/pacing.
 
   
 
@@ -71,7 +81,7 @@ Create a new bookmark and paste the following into the **URL field**.
 
 ```javascript
 
-javascript: fetch("https://raw.githubusercontent.com/Chaos142/RosettaSuite/refs/heads/main/VocabFetch.js?t=" + Date.now()).then(r  =>  r.text()).then(r  =>  eval(r))
+javascript: fetch("https://raw.githubusercontent.com/chaowoses/RosettaSuite/refs/heads/main/VocabFetch.js?t=" + Date.now()).then(r  =>  r.text()).then(r  =>  eval(r))
 
 ```
 
@@ -81,7 +91,7 @@ javascript: fetch("https://raw.githubusercontent.com/Chaos142/RosettaSuite/refs/
 
 ```javascript
 
-javascript: fetch("https://raw.githubusercontent.com/Chaos142/RosettaSuite/refs/heads/main/AutoAnswer.js?t=" + Date.now()).then(r  =>  r.text()).then(r  =>  eval(r))
+javascript: fetch("https://raw.githubusercontent.com/chaowoses/RosettaSuite/refs/heads/main/AutoAnswer.js?t=" + Date.now()).then(r  =>  r.text()).then(r  =>  eval(r))
 
 ```
 
@@ -89,4 +99,4 @@ javascript: fetch("https://raw.githubusercontent.com/Chaos142/RosettaSuite/refs/
 
 ## Troubleshooting
 
-If something doesn't work, [open an issue](https://github.com/Chaos142/RosettaSuite/issues) or email **chaos@chaowoses.dev**.
+If something doesn't work, [open an issue](https://github.com/chaowoses/RosettaSuite/issues) or email **chaos@chaowoses.dev**.
