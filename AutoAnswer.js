@@ -4,16 +4,19 @@
     const parsed = JSON.parse(rawJson);
     const vocab = parsed.vocab || (parsed.conjugations ? {} : parsed);
     const conjugations = parsed.conjugations || {};
+    const commands = parsed.commands || {};
 
     const allAnswers = [
         ...Object.values(vocab),
-        ...Object.values(conjugations).flatMap(forms => Object.values(forms))
+        ...Object.values(conjugations).flatMap(forms => Object.values(forms)),
+        ...Object.values(commands).flatMap(byPronoun => Object.values(byPronoun).flatMap(byTense => Object.values(byTense)))
     ].filter(Boolean);
 
     const clean = (str) => {
         return str
             .replace(/^[0-9]+\.\s*/, '')
-            .replace(/[\n\r\t]+/g, ' ')
+            .split(/[\n\r]+/)[0]
+            .replace(/\t+/g, ' ')
             .split('/')[0]
             .trim();
     };
@@ -46,10 +49,20 @@
         const questionEl = document.getElementById('question-input');
         const pronounEl = document.getElementById('pronoun-input');
         const verbEl = document.getElementById('verb-input');
+        const tenseEl = document.getElementById('tense-input');
 
         if (pronounEl && verbEl) {
             const verb = clean(verbEl.innerText);
             const pronounKey = resolvePronounKey(clean(pronounEl.innerText));
+            // tense-input is present on every question but only holds
+            // positive/negative for command drills — it's empty for
+            // regular conjugation/progressive questions, which still
+            // need to fall through to the conjugations table below.
+            const tense = tenseEl ? clean(tenseEl.innerText).toLowerCase() : '';
+            if (tense === 'positive' || tense === 'negative') {
+                const forms = commands[verb] && commands[verb][pronounKey];
+                return (forms && forms[tense]) || null;
+            }
             return (conjugations[verb] && conjugations[verb][pronounKey]) || null;
         }
         if (questionEl) {
@@ -61,7 +74,7 @@
     // Identifies the question currently on screen, so we can tell whether
     // a miss left us on the same prompt (retry required) or moved on.
     const getQuestionSignature = () => {
-        const parts = ['question-input', 'pronoun-input', 'verb-input']
+        const parts = ['question-input', 'pronoun-input', 'verb-input', 'tense-input']
             .map(id => document.getElementById(id))
             .filter(Boolean)
             .map(el => clean(el.innerText));

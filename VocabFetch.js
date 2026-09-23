@@ -1,11 +1,13 @@
 (function() {
     const dictionary = {};
     const conjugations = {};
+    const commands = {};
 
     const clean = (str) => {
         return str
             .replace(/^[0-9]+\.\s*/, '')
-            .replace(/[\n\r\t]+/g, ' ')
+            .split(/[\n\r]+/)[0]
+            .replace(/\t+/g, ' ')
             .split('/')[0]
             .trim();
     };
@@ -34,19 +36,48 @@
         }
 
         const forms = {};
-        card.querySelectorAll('table tr').forEach(row => {
-            const cells = row.querySelectorAll('td');
-            for (let i = 0; i + 1 < cells.length; i += 2) {
-                const pronoun = normalizePronoun(clean(cells[i].innerText));
-                const form = clean(cells[i + 1].innerText);
-                if (pronoun && form) {
-                    forms[pronoun] = form;
-                }
+        const commandForms = {};
+
+        card.querySelectorAll('table').forEach(table => {
+            const headerLabels = Array.from(table.querySelectorAll('thead td, thead th'))
+                .map(cell => clean(cell.innerText).toLowerCase());
+            // Command tables have one pronoun per row plus separate
+            // positive/negative columns, instead of the usual two
+            // pronoun+form pairs per row, so they need their own pass.
+            const isCommandTable = headerLabels.includes('positive') && headerLabels.includes('negative');
+
+            if (isCommandTable) {
+                table.querySelectorAll('tbody tr').forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length < 3) return;
+                    const pronoun = normalizePronoun(clean(cells[0].innerText));
+                    const positive = clean(cells[1].innerText);
+                    const negative = clean(cells[2].innerText);
+                    if (!pronoun) return;
+                    commandForms[pronoun] = commandForms[pronoun] || {};
+                    if (positive) commandForms[pronoun].positive = positive;
+                    if (negative) commandForms[pronoun].negative = negative;
+                });
+                return;
             }
+
+            table.querySelectorAll('tr').forEach(row => {
+                const cells = row.querySelectorAll('td');
+                for (let i = 0; i + 1 < cells.length; i += 2) {
+                    const pronoun = normalizePronoun(clean(cells[i].innerText));
+                    const form = clean(cells[i + 1].innerText);
+                    if (pronoun && form) {
+                        forms[pronoun] = form;
+                    }
+                }
+            });
         });
 
         if (Object.keys(forms).length) {
             conjugations[infinitive] = forms;
+        }
+        if (Object.keys(commandForms).length) {
+            commands[infinitive] = commandForms;
         }
     });
 
@@ -65,7 +96,7 @@
         }
     });
 
-    const payload = { vocab: dictionary, conjugations };
+    const payload = { vocab: dictionary, conjugations, commands };
     const json = JSON.stringify(payload);
 
     const textArea = document.createElement("textarea");
